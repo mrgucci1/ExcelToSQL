@@ -50,6 +50,7 @@
     <Compile Include="filterClass.cs" />
     <Compile Include="generateConfig.cs" />
     <Compile Include="getDate.cs" />
+    <Compile Include="processCfg.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="readFiles.cs" />
