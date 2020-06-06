@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace ExcelToSQL
 {
-    class excelRDShipment
+    class excelGenerate
     {
         //Reference to classes
         readFiles rf = new readFiles();
@@ -22,62 +22,55 @@ namespace ExcelToSQL
         getDate gd = new getDate();
         dateConvert dc = new dateConvert();
         //Variables
-        string tableName = "[ShipmentData]";
+        //string tableName = "[ShipmentData]";
         string osdate = DateTime.Now.ToString("yyyyMMdd");
         //Date is acquired in class below, using filename
-        string header = "ShipDate, GLDate, ItemIdentifer, ItemUPCCode, ItemDescription, eCommItemIdentifier, Retailer, WarehouseIdentifier, ShipToAddress, ShipToCity, ShipToState, ShipToPostalCode, QuantityShipped, WholesaleDollarsShipped";
-        int[] excelNums = new int[2] { 13, 14};
-        int startingNum = 14;
+        //string header = "ShipDate, GLDate, ItemIdentifer, ItemUPCCode, ItemDescription, eCommItemIdentifier, Retailer, WarehouseIdentifier, ShipToAddress, ShipToCity, ShipToState, ShipToPostalCode, QuantityShipped, WholesaleDollarsShipped";
+        //int[] excelNums = new int[2] { 13, 14};
+        //int startingNum = 14;
         string[] master = new string[300000];
         int mcount = 0;
 
-        public void excelRDStart()
+        public void excelGenStart(string tableName, string header, int[] excelNums, int[] dateNums, int startingNum)
         {
             //Get Shipment Files
             string[] files = rf.ProcessDirectory(Directory.GetCurrentDirectory());
             files = fc.filterNoName(files, ".csv", ".xlsx");
-            for (int count = 0; count < files.Length; count++)
+            string path = files[0];
+            string date = DateTime.Now.ToString("MM-dd-yyyy");
+            //Process Excel Doc
+            object[,] excelValues = em.excelMasterStart(path);
+            //Setup loop for insert querys
+            excelValues = em.filterExcel(excelValues, excelNums, startingNum);
+            for (int i = startingNum; i < em.rowCountF + 1; i++)
             {
-                string[] querys = new string[10000];
-                int counter = 0;
-                string path = files[count];
-                string date = DateTime.Now.ToString("MM-dd-yyyy");
-                //Process Excel Doc
-                object[,] excelValues = em.excelMasterStart(path);
-                //Setup loop for insert querys
-                excelValues = em.filterExcel(excelValues, excelNums, startingNum);
-                for (int i = startingNum; i < em.rowCountF + 1; i++)
+                string excelInsert = $"Insert into {tableName} ({header}) VALUES (";
+                string valueHolder = "";
+                //Convert Columns to dates
+                for(int index = 1;index < dateNums.Length+1;index++)
                 {
-                    string excelInsert = $"Insert into {tableName} ({header}) VALUES (";
-                    string valueHolder = "";
-                    excelValues[i, 1] = dc.dateConvertStart(excelValues[i, 1].ToString(), "ShipDate");
-                    excelValues[i, 2] = dc.dateConvertStart(excelValues[i, 2].ToString(), "GL/Date");
-                    for (int index = 1; index < em.colCountF + 1; index++)
-                    {
-                        
-                        valueHolder = valueHolder + excelValues[i, index].ToString();
-                        //If it is not the last item in the column, add a comma
-                        if (index != em.colCountF)
-                            valueHolder = valueHolder + ", ";
-                    }
-                    //combine all parts
-                    excelInsert = $"{excelInsert} {valueHolder})";
-                    Console.WriteLine(excelInsert);
-                    //add to query array
-                    querys[counter] = excelInsert;
-                    master[mcount] = excelInsert;
-                    mcount++;
-                    counter++;
+                    excelValues[i, index] = dc.dateConvertStart(excelValues[i, index].ToString(), "Date");
                 }
-                querys = querys.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-                System.IO.File.WriteAllLines(Directory.GetCurrentDirectory() + $@"\{osdate}_RD_SHIPMENT_{count + 1}_output.txt", querys);
+                for (int index = 1; index < em.colCountF + 1; index++)
+                {
+                        
+                    valueHolder = valueHolder + excelValues[i, index].ToString();
+                    //If it is not the last item in the column, add a comma
+                    if (index != em.colCountF)
+                        valueHolder = valueHolder + ", ";
+                }
+                //combine all parts
+                excelInsert = $"{excelInsert} {valueHolder})";
+                Console.WriteLine(excelInsert);
+                //add to query array
+                master[mcount] = excelInsert;
+                mcount++;
+
+                
             }
-            if(files.Length > 1)
-            {
-                master = master.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
-                System.IO.File.WriteAllLines(Directory.GetCurrentDirectory() + $@"\{osdate}_RD_SHIPMENT_ALL_output.txt", master);
-            }
-            
+            master = master.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+            System.IO.File.WriteAllLines(Directory.GetCurrentDirectory() + $@"\{osdate}_EXCELTOSQL_output.txt", master);
+
         }
     }
 }

@@ -63,6 +63,8 @@ namespace ExcelToSQL
                     file.WriteLine(num);
             }
 
+            Console.WriteLine("Your Config is done!");
+
 
         }
     }

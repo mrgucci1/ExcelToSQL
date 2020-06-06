@@ -16,9 +16,10 @@ namespace ExcelToSQL
             readFiles rf = new readFiles();
             filterClass fil = new filterClass();
             processCfg pCfg = new processCfg();
+            excelGenerate e = new excelGenerate();
             //Check if config file exists in current dir
             string[] files = rf.ProcessDirectory(Directory.GetCurrentDirectory());
-            files = fil.filterNoName(files, ".txt", ".txt");
+            files = fil.filter(files, ".txt", ".txt","cfg");
             //if any file contains name: cfg then cfg exists, process config
             if (files.Any(s => s.Contains("cfg")))
             {
@@ -36,6 +37,10 @@ namespace ExcelToSQL
                 {
                     Console.WriteLine(pCfg.dateValuesF[i]);
                 }
+
+                e.excelGenStart(values[0], values[1], pCfg.numValuesF, pCfg.dateValuesF, pCfg.startingNumF);
+                Console.WriteLine("Finished writing querys");
+                Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
 
             }
